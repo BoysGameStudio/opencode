@@ -95,6 +95,20 @@ if (root instanceof HTMLElement && root.dataset.opencodeMounted === undefined) {
           },
         }
       : undefined
+    const preset = (() => {
+      try {
+        const list = JSON.parse(import.meta.env.VITE_OPENCODE_PRESET_SERVERS ?? "[]")
+        return (Array.isArray(list) ? list : [])
+          .filter((e) => e && typeof e.url === "string" && e.url.trim())
+          .map((e) => ({
+            type: "http" as const,
+            http: { url: e.url, ...(typeof e.password === "string" && e.password ? { password: e.password } : {}) },
+            ...(typeof e.displayName === "string" && e.displayName ? { displayName: e.displayName } : {}),
+          }))
+      } catch {
+        return []
+      }
+    })()
 
     render(
       () => (
@@ -102,7 +116,7 @@ if (root instanceof HTMLElement && root.dataset.opencodeMounted === undefined) {
           <AppBaseProviders locale={locale}>
             <AppInterface
               canonicalLocalServer={server ? ServerConnection.key(server) : undefined}
-              servers={server ? [server] : []}
+              servers={server ? [server] : preset}
             >
               <KeyboardInsets />
               {standalone && <PwaRoutePersistence />}
